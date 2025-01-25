@@ -47,6 +47,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     statusItem.handlePreferences = {
       self.settingsWindowController.show()
+      NSApp.activate(ignoringOtherApps: true)
     }
     statusItem.handleReloadConfig = {
       self.config.reloadConfig()
@@ -71,7 +72,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   @IBAction
   func settingsMenuItemActionHandler(_: NSMenuItem) {
-    settingsWindowController.show()
+    self.settingsWindowController.show()
+    NSApp.activate(ignoringOtherApps: true)
   }
 
   func show() {
