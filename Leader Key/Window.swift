@@ -7,7 +7,7 @@ class Window: NSPanel, NSWindowDelegate {
   override var canBecomeKey: Bool { return true }
   override var canBecomeMain: Bool { return true }
 
-  var controller: Controller
+  weak var controller: Controller?
 
   init(controller: Controller) {
     self.controller = controller
@@ -24,7 +24,7 @@ class Window: NSPanel, NSWindowDelegate {
 
     center()
 
-    let view = MainView().environmentObject(self.controller.userState)
+    let view = MainView().environmentObject(self.controller!.userState)
     contentView = NSHostingView(rootView: view)
 
     backgroundColor = .clear
@@ -44,7 +44,12 @@ class Window: NSPanel, NSWindowDelegate {
   }
 
   override func keyDown(with event: NSEvent) {
-    controller.keyDown(with: event)
+    controller?.keyDown(with: event)
+  }
+
+  override func resignKey() {
+    super.resignKey()
+    controller?.hide()
   }
 
   func show() {
