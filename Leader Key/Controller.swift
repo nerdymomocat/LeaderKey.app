@@ -38,8 +38,16 @@ class Controller {
 
   func keyDown(with event: NSEvent) {
     switch event.keyCode {
-    case KeyHelpers.Backspace.rawValue: clear()
-    case KeyHelpers.Escape.rawValue: hide()
+    case KeyHelpers.Backspace.rawValue:
+      if !userState.popGroup() {
+        // At root level, only clear if we have a display value
+        if userState.display != nil {
+          clear()
+        }
+      }
+      userState.hideOptions()
+    case KeyHelpers.Escape.rawValue:
+      hide()
     default:
       let char = event.charactersIgnoringModifiers?.lowercased()
 
@@ -66,8 +74,7 @@ class Controller {
         hide()
       case let .group(group):
         userState.hideOptions()
-        userState.display = group.key
-        userState.currentGroup = group
+        userState.pushGroup(group)  // Changed from direct assignment to pushGroup
       case .none:
         window.shake()
         userState.showOptions = true

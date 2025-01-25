@@ -14,6 +14,7 @@ final class UserState: ObservableObject {
   @Published var showOptions = true
   @Published var optionsDisplayMode: OptionsDisplayMode = .afterDelay
   private var showOptionsTimer: Timer?
+  private var groupHistory: [Group] = []  // Add this line
 
   init(userConfig: UserConfig!, lastChar: String? = nil, currentGroup: Group? = nil) {
     self.userConfig = userConfig
@@ -45,9 +46,27 @@ final class UserState: ObservableObject {
     }
   }
 
+  func pushGroup(_ group: Group) {
+    if let currentGroup = currentGroup {
+      groupHistory.append(currentGroup)
+    }
+    currentGroup = group
+    display = group.key
+  }
+
+  func popGroup() -> Bool {
+    guard !groupHistory.isEmpty else {
+      return false  // At root level
+    }
+    currentGroup = groupHistory.removeLast()
+    display = currentGroup?.key
+    return true
+  }
+
   func clear() {
     display = nil
-    currentGroup = userConfig.root
+    currentGroup = nil
+    groupHistory.removeAll()
     updateOptionsVisibility()
     showOptionsTimer?.invalidate()
   }
