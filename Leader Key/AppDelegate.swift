@@ -21,7 +21,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       Settings.Pane(
         identifier: .general, title: "General",
         toolbarIcon: NSImage(named: NSImage.preferencesGeneralName)!,
-        contentView: { GeneralPane().environmentObject(self.config) }
+        contentView: { 
+          GeneralPane()
+            .environmentObject(self.config)
+            .environmentObject(self.state)
+        }
       )
     ]
   )

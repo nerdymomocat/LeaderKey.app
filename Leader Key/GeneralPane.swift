@@ -6,6 +6,7 @@ import SwiftUI
 struct GeneralPane: View {
   private let contentWidth = 600.0
   @EnvironmentObject private var config: UserConfig
+  @EnvironmentObject private var userState: UserState
 
   var body: some View {
     Settings.Container(contentWidth: contentWidth) {
@@ -39,6 +40,22 @@ struct GeneralPane: View {
             }
           }
         }
+      }
+
+      Settings.Section(title: "Cheatsheet") {
+        HStack {
+          
+          Picker("Config Display Mode", selection: $userState.optionsDisplayMode) { // Added label parameter
+            ForEach(OptionsDisplayMode.allCases, id: \.self) { mode in
+              Text(mode.rawValue).tag(mode)
+            }
+          }
+          .frame(width: 129)
+          .labelsHidden() // Hide the label since we're using our own Text view
+          .onChange(of: userState.optionsDisplayMode) { _ in
+            userState.updateOptionsVisibility()
+          }
+                  }
       }
 
       Settings.Section(title: "Shortcut") {
