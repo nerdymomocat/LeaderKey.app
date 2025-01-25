@@ -63,6 +63,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       if self.window.isVisible && self.window.isKeyWindow {
         self.hide()
       } else {
+        self.state.hideOptions()  // Changed from userState to state
         self.show()
       }
     }

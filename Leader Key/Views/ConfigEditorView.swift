@@ -39,10 +39,11 @@ struct GroupContentView: View {
         AddButtons(
           onAddAction: {
             group.actions.append(
-              .action(Action(key: "", type: .application, value: "")))
+              .action(Action(key: "", type: .application, value: "", friendly: ""))
+            )
           },
           onAddGroup: {
-            group.actions.append(.group(Group(key: "", actions: [])))
+            group.actions.append(.group(Group(key: "", friendly: "", actions: [])))
           }
         )
       }.padding(.top, PADDING * 0.5)
@@ -86,7 +87,7 @@ struct ActionOrGroupRow: View {
     Binding(
       get: {
         if case .action(let action) = item { return action }
-        return Action(key: "", type: .application, value: "")
+          return Action(key: "", type: .application, value: "", friendly: "")
       },
       set: { item = .action($0) }
     )
@@ -111,6 +112,10 @@ struct ActionRow: View {
     HStack(spacing: PADDING) {
       TextField("Key", text: $action.key)
         .frame(width: 32)
+        .textFieldStyle(.roundedBorder)
+
+      TextField("Friendly", text: $action.friendly)
+        .frame(width: 100)
         .textFieldStyle(.roundedBorder)
 
       Picker("Type", selection: $action.type) {
@@ -163,6 +168,13 @@ struct GroupRow: View {
         .frame(width: 32)
         .textFieldStyle(.roundedBorder)
 
+        TextField("Friendly", text: Binding(
+          get: { group.friendly ?? "" },
+          set: { group.friendly = $0 }
+        ))
+        .frame(width: 100)
+        .textFieldStyle(.roundedBorder)
+
         Image(systemName: "chevron.right")
           .rotationEffect(.degrees(isExpanded ? 90 : 0))
           .onTapGesture {
@@ -201,47 +213,55 @@ struct GroupRow: View {
   let group = Group(actions: [
     // Level 1 actions
     .action(
-      Action(key: "t", type: .application, value: "/Applications/WezTerm.app")),
+      Action(key: "t", type: .application, value: "/Applications/WezTerm.app", friendly: "WezTerm")),
     .action(
-      Action(key: "f", type: .application, value: "/Applications/Firefox.app")),
+      Action(key: "f", type: .application, value: "/Applications/Firefox.app", friendly: "Firefox")),
 
     // Level 1 group with actions
     .group(
       Group(
         key: "b",
+        friendly: "Browsers",
         actions: [
           .action(
             Action(
               key: "c", type: .application,
-              value: "/Applications/Google Chrome.app")),
+              value: "/Applications/Google Chrome.app",
+              friendly: "Chrome")),
           .action(
             Action(
-              key: "s", type: .application, value: "/Applications/Safari.app")),
+              key: "s", type: .application, 
+              value: "/Applications/Safari.app",
+              friendly: "Safari")),
         ])),
 
     // Level 1 group with subgroups
     .group(
       Group(
         key: "r",
+        friendly: "Raycast",
         actions: [
           .action(
             Action(
               key: "e", type: .url,
-              value:
-                "raycast://extensions/raycast/emoji-symbols/search-emoji-symbols"
+              value: "raycast://extensions/raycast/emoji-symbols/search-emoji-symbols",
+              friendly: "Emoji"
             )),
           .group(
             Group(
               key: "w",
+              friendly: "Window Management",
               actions: [
                 .action(
                   Action(
                     key: "f", type: .url,
-                    value: "raycast://window-management/maximize")),
+                    value: "raycast://window-management/maximize",
+                    friendly: "Maximize")),
                 .action(
                   Action(
                     key: "h", type: .url,
-                    value: "raycast://window-management/left-half")),
+                    value: "raycast://window-management/left-half",
+                    friendly: "Left Half")),
               ])),
         ])),
   ])

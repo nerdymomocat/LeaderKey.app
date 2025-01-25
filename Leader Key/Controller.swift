@@ -61,13 +61,16 @@ class Controller {
 
       switch hit {
       case let .action(action):
+        userState.hideOptions()
         runAction(action)
         hide()
       case let .group(group):
+        userState.hideOptions()
         userState.display = group.key
         userState.currentGroup = group
       case .none:
         window.shake()
+        userState.showOptions = true
       }
     }
   }

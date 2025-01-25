@@ -122,24 +122,26 @@ let defaultConfig = """
   {
       "type": "group",
       "actions": [
-          { "key": "t", "type": "application", "value": "/System/Applications/Utilities/Terminal.app" },
+          { "key": "t", "type": "application", "value": "/System/Applications/Utilities/Terminal.app", "friendly":"Terminal" },
           {
               "key": "o",
               "type": "group",
+              "friendly":"Operating System",
               "actions": [
-                  { "key": "s", "type": "application", "value": "/Applications/Safari.app" },
-                  { "key": "e", "type": "application", "value": "/Applications/Mail.app" },
-                  { "key": "i", "type": "application", "value": "/System/Applications/Music.app" },
-                  { "key": "m", "type": "application", "value": "/Applications/Messages.app" }
+                  { "key": "s", "type": "application", "value": "/Applications/Safari.app", "friendly":"Safari" },
+                  { "key": "e", "type": "application", "value": "/Applications/Mail.app", "friendly":"Mail" },
+                  { "key": "i", "type": "application", "value": "/System/Applications/Music.app", "friendly":"Music" },
+                  { "key": "m", "type": "application", "value": "/Applications/Messages.app", "friendly":"Apple Messages" }
               ]
           },
           {
               "key": "r",
               "type": "group",
+              "friendly":"Raycast",
               "actions": [
-                  { "key": "e", "type": "url", "value": "raycast://extensions/raycast/emoji-symbols/search-emoji-symbols" },
-                  { "key": "p", "type": "url", "value": "raycast://confetti" },
-                  { "key": "c", "type": "url", "value": "raycast://extensions/raycast/system/open-camera" }
+                  { "key": "e", "type": "url", "value": "raycast://extensions/raycast/emoji-symbols/search-emoji-symbols", "friendly": "Emoji" },
+                  { "key": "p", "type": "url", "value": "raycast://confetti", "friendly": "confetti" },
+                  { "key": "c", "type": "url", "value": "raycast://extensions/raycast/system/open-camera", "friendly": "camera" }
               ]
           }
       ]
@@ -157,10 +159,12 @@ struct Action: Codable {
   var key: String
   var type: Type
   var value: String
+  var friendly: String
 }
 
 struct Group: Codable {
   var key: String?
+  var friendly: String?
   var type: Type = .group
   var actions: [ActionOrGroup]
 }
@@ -170,7 +174,7 @@ enum ActionOrGroup: Codable {
   case group(Group)
 
   private enum CodingKeys: String, CodingKey {
-    case key, type, value, actions
+    case key, type, value, actions, friendly
   }
 
   init(from decoder: Decoder) throws {
@@ -180,10 +184,12 @@ enum ActionOrGroup: Codable {
     switch type {
     case .group:
       let actions = try container.decode([ActionOrGroup].self, forKey: .actions)
-      self = .group(Group(key: key, actions: actions))
+      let friendly = try container.decodeIfPresent(String.self, forKey: .friendly) ?? "" // Default to empty string
+      self = .group(Group(key: key, friendly: friendly, actions: actions))
     default:
       let value = try container.decode(String.self, forKey: .value)
-      self = .action(Action(key: key, type: type, value: value))
+      let friendly = try container.decodeIfPresent(String.self, forKey: .friendly) ?? "" // Default to empty string
+      self = .action(Action(key: key, type: type, value: value, friendly: friendly))
     }
   }
 
@@ -194,10 +200,12 @@ enum ActionOrGroup: Codable {
       try container.encode(action.key, forKey: .key)
       try container.encode(action.type, forKey: .type)
       try container.encode(action.value, forKey: .value)
+      try container.encode(action.friendly, forKey: .friendly)
     case let .group(group):
       try container.encode(group.key, forKey: .key)
       try container.encode(Type.group, forKey: .type)
       try container.encode(group.actions, forKey: .actions)
+      try container.encodeIfPresent(group.friendly, forKey: .friendly)
     }
   }
 }
