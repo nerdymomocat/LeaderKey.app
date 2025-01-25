@@ -3,6 +3,7 @@ import KeyboardShortcuts
 import Settings
 import Sparkle
 import SwiftUI
+import Combine
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
@@ -24,6 +25,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
       )
     ]
   )
+
+  private var observers = Set<AnyCancellable>()
+
+  private func fixMenu() {
+    let menu = NSMenu(title: "Edit")
+    
+    menu.addItem(withTitle: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+    menu.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
+    menu.addItem(withTitle: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
+    menu.addItem(withTitle: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
+    menu.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
+    menu.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
+    menu.addItem(withTitle: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
+    
+    let editMenuItem = NSMenuItem()
+    editMenuItem.title = "Edit"
+    editMenuItem.submenu = menu
+    if NSApp.mainMenu == nil {
+        NSApp.mainMenu = NSMenu()
+    }
+    NSApp.mainMenu?.items = [editMenuItem]
+  }
 
   func applicationDidFinishLaunching(_: Notification) {
     guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else { return }
@@ -68,6 +91,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         self.show()
       }
     }
+
+    NSApp.publisher(for: \.mainMenu)
+        .sink { [weak self] _ in self?.fixMenu() }
+        .store(in: &observers)
   }
 
   @IBAction
