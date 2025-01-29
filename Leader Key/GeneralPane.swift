@@ -2,10 +2,13 @@ import KeyboardShortcuts
 import LaunchAtLogin
 import Settings
 import SwiftUI
+import Defaults
 
 struct GeneralPane: View {
   private let contentWidth = 680.0
   @EnvironmentObject private var config: UserConfig
+  @Default(.cheatsheetBehavior) private var cheatsheetBehavior
+  @Default(.cheatsheetDelay) private var cheatsheetDelay
 
   var body: some View {
     Settings.Container(contentWidth: contentWidth) {
@@ -47,6 +50,29 @@ struct GeneralPane: View {
 
       Settings.Section(title: "App") {
         LaunchAtLogin.Toggle()
+      }
+
+      Settings.Section(title: "Cheatsheet") {
+        HStack(alignment: .firstTextBaseline) {  // Weird setup here to get labels to align to text
+          Text("Show:")
+          Picker("", selection: $cheatsheetBehavior) {
+            ForEach(CheatsheetBehavior.allCases, id: \.self) { behavior in
+              Text(behavior.rawValue).tag(behavior)
+            }
+          }
+          .labelsHidden()
+          .frame(width: 200)
+          
+          if cheatsheetBehavior == .afterDelay {
+            Text("Delay:")
+              .padding(.leading, 16)
+            TextField("", value: $cheatsheetDelay, formatter: NumberFormatter())
+              .frame(width: 30)
+            Text("seconds")
+          }
+          
+          Spacer()
+        }
       }
     }
   }

@@ -1,6 +1,7 @@
 import Cocoa
 import Combine
 import SwiftUI
+import Defaults
 
 enum KeyHelpers: UInt16 {
   case Return = 36
@@ -16,6 +17,7 @@ class Controller {
 
   var window: Window!
   var cheatsheetWindow: NSWindow?
+  private var cheatsheetTimer: Timer?
 
   init(userState: UserState, userConfig: UserConfig) {
     self.userState = userState
@@ -25,16 +27,32 @@ class Controller {
 
   func show() {
     window.show()
+    
+    // Handle cheatsheet display based on preferences
+    switch Defaults[.cheatsheetBehavior] {
+    case .always:
+      showCheatsheet()
+    case .afterDelay:
+      // Start the initial delay timer when window opens
+      scheduleCheatsheet()
+    default:
+      break
+    }
   }
 
   func hide() {
     window.hide {
       self.clear()
     }
-    cheatsheetWindow?.orderOut(nil)
+    hideCheatsheet()
   }
 
   func keyDown(with event: NSEvent) {
+    // Reset/start the delay timer on any key press if we're in afterDelay mode
+    if Defaults[.cheatsheetBehavior] == .afterDelay {
+      scheduleCheatsheet()
+    }
+
     if event.modifierFlags.contains(.command) {
       switch event.charactersIgnoringModifiers {
       case ",":
@@ -63,7 +81,9 @@ class Controller {
       let char = event.charactersIgnoringModifiers?.lowercased()
 
       if char == "?" {
-        showCheatsheet()
+        if Defaults[.cheatsheetBehavior] == .onQuestionMark {
+          showCheatsheet()
+        }
         return
       }
 
@@ -101,6 +121,22 @@ class Controller {
     delay(1) {
       self.positionCheatsheetWindow()
     }
+  }
+
+  private func scheduleCheatsheet() {
+    // Cancel any existing timer first
+    hideCheatsheet()
+    
+    // Start a new timer
+    cheatsheetTimer = Timer.scheduledTimer(withTimeInterval: Defaults[.cheatsheetDelay], repeats: false) { [weak self] _ in
+      self?.showCheatsheet()
+    }
+  }
+
+  private func hideCheatsheet() {
+    cheatsheetTimer?.invalidate()
+    cheatsheetTimer = nil
+    cheatsheetWindow?.orderOut(nil)
   }
 
   private func positionCheatsheetWindow() {
