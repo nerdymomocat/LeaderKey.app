@@ -1,4 +1,5 @@
 import Cocoa
+import Defaults
 import KeyboardShortcuts
 import Settings
 import Sparkle
@@ -8,7 +9,8 @@ import UserNotifications
 let UPDATE_NOTIFICATION_IDENTIFIER = "UpdateCheck"
 
 @NSApplicationMain
-class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegate,
+class AppDelegate: NSObject, NSApplicationDelegate,
+  SPUStandardUserDriverDelegate,
   UNUserNotificationCenterDelegate
 {
   var window: Window!
@@ -31,10 +33,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegat
   )
 
   func applicationDidFinishLaunching(_: Notification) {
-    guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else { return }
+    ensureConfigDir()
+
+    guard
+      ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1"
+    else { return }
 
     UNUserNotificationCenter.current().delegate = self
-    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) {
+    UNUserNotificationCenter.current().requestAuthorization(options: [
+      .alert, .badge, .sound,
+    ]) {
       granted, error in
       if let error = error {
         print("Error requesting notification permission: \(error)")
@@ -73,7 +81,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegat
     statusItem.handleCheckForUpdates = {
       self.updaterController.checkForUpdates(nil)
     }
-    statusItem.enable()
+
+    Task {
+      for await value in Defaults.updates(.showMenuBarIcon) {
+        if value {
+          self.statusItem.enable()
+        } else {
+          self.statusItem.disable()
+        }
+      }
+    }
 
     KeyboardShortcuts.onKeyUp(for: .activate) {
       if self.window.isVisible && self.window.isKeyWindow {
@@ -81,6 +98,16 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegat
       } else {
         self.show()
       }
+    }
+  }
+
+  func applicationWillTerminate(_ notification: Notification) {
+    config.saveConfig()
+  }
+
+  private func ensureConfigDir() {
+    if Defaults[.configDir] == CONFIG_DIR_EMPTY {
+      Defaults[.configDir] = UserConfig.defaultDirectory()
     }
   }
 
@@ -105,51 +132,51 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUStandardUserDriverDelegat
   }
 
   func standardUserDriverWillHandleShowingUpdate(
-    _ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem, state: SPUUserUpdateState
+    _ handleShowingUpdate: Bool, forUpdate update: SUAppcastItem,
+    state: SPUUserUpdateState
   ) {
-    // When an update alert will be presented, place the app in the foreground
     NSApp.setActivationPolicy(.regular)
 
     if !state.userInitiated {
-      // Add a badge to the app's dock icon indicating one alert occurred
       NSApp.dockTile.badgeLabel = "1"
 
-      // Post a user notification
       let content = UNMutableNotificationContent()
       content.title = "Leader Key Update Available"
       content.body = "Version \(update.displayVersionString) is now available"
 
       let request = UNNotificationRequest(
-        identifier: UPDATE_NOTIFICATION_IDENTIFIER, content: content, trigger: nil)
+        identifier: UPDATE_NOTIFICATION_IDENTIFIER, content: content,
+        trigger: nil)
       UNUserNotificationCenter.current().add(request)
     }
   }
 
-  func standardUserDriverDidReceiveUserAttention(forUpdate update: SUAppcastItem) {
-    // Clear the dock badge indicator for the update
+  func standardUserDriverDidReceiveUserAttention(
+    forUpdate update: SUAppcastItem
+  ) {
     NSApp.dockTile.badgeLabel = ""
 
-    // Dismiss active update notifications
-    UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [
-      UPDATE_NOTIFICATION_IDENTIFIER
-    ])
+    UNUserNotificationCenter.current().removeDeliveredNotifications(
+      withIdentifiers: [
+        UPDATE_NOTIFICATION_IDENTIFIER
+      ])
   }
 
   func standardUserDriverWillFinishUpdateSession() {
-    // Put app back in background when update session finishes
     NSApp.setActivationPolicy(.accessory)
   }
 
   // MARK: - UNUserNotificationCenter Delegate
 
   func userNotificationCenter(
-    _ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+    _ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse,
     withCompletionHandler completionHandler: @escaping () -> Void
   ) {
-    if response.notification.request.identifier == UPDATE_NOTIFICATION_IDENTIFIER
+    if response.notification.request.identifier
+      == UPDATE_NOTIFICATION_IDENTIFIER
       && response.actionIdentifier == UNNotificationDefaultActionIdentifier
     {
-      // If notification is clicked, bring update in focus
       updaterController.checkForUpdates(nil)
     }
     completionHandler()
