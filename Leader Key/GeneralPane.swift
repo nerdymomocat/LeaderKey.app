@@ -101,52 +101,6 @@ struct GeneralPane: View {
           Spacer()
         }
       }
-
-      Settings.Section(title: "Cheatsheet") {
-        HStack(alignment: .firstTextBaseline) {  // Weird setup here to get labels to align to text
-          Text("Show:")
-          Picker("", selection: $cheatsheetBehavior) {
-            ForEach(CheatsheetBehavior.allCases, id: \.self) { behavior in
-              Text(behavior.rawValue).tag(behavior)
-            }
-          }
-          .labelsHidden()
-          .frame(width: 200)
-          
-          if cheatsheetBehavior == .afterDelay {
-            Text("Delay:")
-              .padding(.leading, 16)
-            TextField("", value: $cheatsheetDelay, formatter: NumberFormatter())
-              .frame(width: 30)
-            Text("seconds")
-          }
-          
-          Spacer()
-        }
-      }
-
-      Settings.Section(title: "Cheatsheet") {
-        HStack(alignment: .firstTextBaseline) {  // Weird setup here to get labels to align to text
-          Text("Show:")
-          Picker("", selection: $cheatsheetBehavior) {
-            ForEach(CheatsheetBehavior.allCases, id: \.self) { behavior in
-              Text(behavior.rawValue).tag(behavior)
-            }
-          }
-          .labelsHidden()
-          .frame(width: 200)
-          
-          if cheatsheetBehavior == .afterDelay {
-            Text("Delay:")
-              .padding(.leading, 16)
-            TextField("", value: $cheatsheetDelay, formatter: NumberFormatter())
-              .frame(width: 30)
-            Text("seconds")
-          }
-          
-          Spacer()
-        }
-      }
     }
   }
 }
