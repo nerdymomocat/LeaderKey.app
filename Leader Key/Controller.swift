@@ -121,22 +121,27 @@ class Controller {
   }
 
   private func runAction(_ action: Action) {
-    switch action.type {
-    case .application:
-      NSWorkspace.shared.openApplication(
-        at: URL(fileURLWithPath: action.value),
-        configuration: NSWorkspace.OpenConfiguration())
-    case .url:
-      NSWorkspace.shared.open(
-        URL(string: action.value)!,
-        configuration: DontActivateConfiguration.shared.configuration)
-    case .command:
-      CommandRunner.run(action.value)
-    case .folder:
-      NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: action.value)
-    default:
-      print("\(action.type) unknown")
-    }
+    // Hide window first to ensure proper focus for keyboard shortcuts
+    window.hide {
+      switch action.type {
+      case .application:
+        NSWorkspace.shared.openApplication(
+          at: URL(fileURLWithPath: action.value),
+          configuration: NSWorkspace.OpenConfiguration())
+      case .url:
+        NSWorkspace.shared.open(
+          URL(string: action.value)!,
+          configuration: DontActivateConfiguration.shared.configuration)
+      case .command:
+          // Add small delay to ensure window transition is complete
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+          CommandRunner.run(action.value)
+        }
+      case .folder:
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: action.value)
+      default:
+        print("\(action.type) unknown")
+      }
   }
 
   private func clear() {
